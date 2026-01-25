@@ -1,5 +1,6 @@
 import { FileText, Upload } from 'lucide-react'
-import { Button } from './ui/Button'
+import { Link } from '@tanstack/react-router'
+import { Button } from './ui/button'
 
 export default function StartConversation() {
   return (
@@ -30,12 +31,16 @@ export default function StartConversation() {
       </p>
 
       <div className="flex flex-wrap items-center gap-4 justify-center">
-        <Button variant="primary" icon={<FileText size={18} />}>
-          Documents
-        </Button>
-        <Button variant="primary" icon={<Upload size={18} />}>
-          Upload
-        </Button>
+        <Link to="/chat">
+          <Button variant="primary" icon={<FileText size={18} />}>
+            Documents
+          </Button>
+        </Link>
+        <Link to="/chat">
+          <Button variant="primary" icon={<Upload size={18} />}>
+            Upload
+          </Button>
+        </Link>
       </div>
     </div >
   )
