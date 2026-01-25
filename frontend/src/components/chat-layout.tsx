@@ -23,7 +23,7 @@ export default function ChatLayout() {
               <path d="M8 14H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <span>PDF.ai</span>
+          <span>PDFHelper</span>
         </div>
 
         <div className="flex items-center gap-4">
