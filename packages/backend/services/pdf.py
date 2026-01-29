@@ -1,7 +1,7 @@
 import pypdf
-from packages.backend.utils.chunker import chunk_text
+from backend.utils.chunker import chunk_text
 
-async def process_pdf(file_path: str) -> list[str]:
+def process_pdf(file_path: str) -> list[str]:
 
   """
   Reads a pdf file, extracts it and then chunks it (w/ the help of chunker util)

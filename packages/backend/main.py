@@ -1,12 +1,29 @@
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI
 from backend.routes import upload, chat
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Register the routes
-app.include_router(upload.router, prefix="/api")
-app.include_router(chat.router, prefix="/api")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(upload.router, prefix="/api/v1")
+app.include_router(chat.router, prefix="/api/v1")
 
 @app.get("/")
 def home():
-    return {"message": "ChatPDF API is running"}
+    return {"message": "PDFHelper API is running"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
