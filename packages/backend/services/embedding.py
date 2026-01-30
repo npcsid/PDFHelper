@@ -7,8 +7,10 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 def get_embedding(text: str):
 
   try:
-    clean_text = text.replace("\n")
-    response = cleint.embeddings.create(
+    print(f"DEBUG: Generating embedding for text replacement... Text length: {len(text)}")
+    clean_text = text.replace("\n", " ")
+    print("DEBUG: Replacement successful.")
+    response = client.embeddings.create(
       input=[clean_text],
       model="text-embedding-3-small"
     )

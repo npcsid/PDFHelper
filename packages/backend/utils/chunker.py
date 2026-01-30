@@ -30,9 +30,9 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[st
     if cleaned_chunk:
       chunks.append(cleaned_chunk)
       
-      start = end - overlap
+    start = end - overlap
 
-      if start >= text_length:
-        break
-            
-    return chunks
+    if start >= text_length:
+      break
+             
+  return chunks

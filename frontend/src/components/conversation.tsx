@@ -1,8 +1,60 @@
-import { FileText, Upload } from 'lucide-react'
+import { FileText, Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Button } from './ui/button'
+import { useState, useRef } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { set } from 'idb-keyval'
 
 export default function StartConversation() {
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate()
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    setUploadStatus('idle')
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      // Store file locally first
+      await set(file.name, file)
+
+      const response = await fetch('http://localhost:8000/api/v1/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('Upload failed')
+      }
+
+      setUploadStatus('success')
+      // Optional: Navigate to chat after a brief delay
+      setTimeout(() => {
+        navigate({
+          to: '/chat',
+          search: { file: file.name }
+        })
+      }, 1500)
+
+    } catch (error) {
+      console.error('Upload error:', error)
+      setUploadStatus('error')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-in fade-in zoom-in duration-500">
       <div className="mb-6">
@@ -36,12 +88,38 @@ export default function StartConversation() {
             Documents
           </Button>
         </Link>
-        <Link to="/chat">
-          <Button variant="primary" icon={<Upload size={18} />}>
-            Upload
-          </Button>
-        </Link>
+
+        <input
+          type="file"
+          accept=".pdf"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        <Button
+          variant="primary"
+          icon={isUploading ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
+          onClick={handleUploadClick}
+          disabled={isUploading}
+        >
+          {isUploading ? 'Uploading...' : 'Upload PDF'}
+        </Button>
       </div>
-    </div >
+
+      {uploadStatus === 'success' && (
+        <div className="mt-4 text-green-600 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <CheckCircle size={18} />
+          <span>Upload successful! Redirecting...</span>
+        </div>
+      )}
+
+      {uploadStatus === 'error' && (
+        <div className="mt-4 text-red-600 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <AlertCircle size={18} />
+          <span>Upload failed. Please try again.</span>
+        </div>
+      )}
+    </div>
   )
 }

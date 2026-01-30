@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fastapi import FastAPI
 from backend.routes import upload, chat
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
@@ -19,6 +20,9 @@ app.add_middleware(
 
 app.include_router(upload.router, prefix="/api/v1")
 app.include_router(chat.router, prefix="/api/v1")
+
+os.makedirs("data/uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="data/uploads"), name="uploads")
 
 @app.get("/")
 def home():
