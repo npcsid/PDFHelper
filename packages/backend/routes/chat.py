@@ -23,11 +23,11 @@ async def chat_endpoint(request: ChatRequest):
         "sources": []
       }
       
-      ai_answer = generate_answer(user_question, relevant_chunks)
-      return {
-        "answer": ai_answer,
-        "sources": [c['text'][:100] + "..." for c in relevant_chunks] 
-      }
+    ai_answer = generate_answer(user_question, relevant_chunks)
+    return {
+      "answer": ai_answer,
+      "sources": [c['text'][:100] + "..." for c in relevant_chunks] 
+    }
   except Exception as e:
     print(f"Error: {e}")
     raise HTTPException(status_code=500, detail=str(e))

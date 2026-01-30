@@ -1,10 +1,38 @@
-import { ArrowRight, Upload } from 'lucide-react'
+import { ArrowRight, Upload, Loader2 } from 'lucide-react'
 import { Button } from './ui/button'
-import PdfViewer from './pdf-viewer'
 import ChatPanel from './chat-panel'
-import { Link } from '@tanstack/react-router'
+import { Link, useSearch } from '@tanstack/react-router'
+import { Route as ChatRoute } from '../routes/chat'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { get } from 'idb-keyval'
+
+const PdfViewer = lazy(() => import('./pdf-viewer'))
 
 export default function ChatLayout() {
+  const { file } = useSearch({ from: ChatRoute.id })
+  const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+    async function loadFile() {
+      if (file) {
+        try {
+          const blob = await get(file)
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            setFileUrl(url)
+            return () => URL.revokeObjectURL(url)
+          }
+        } catch (err) {
+          console.error("Failed to load PDF from storage:", err)
+        }
+      }
+      setFileUrl(null)
+    }
+    loadFile()
+  }, [file])
+
   return (
     <div className="flex flex-col h-screen bg-gray-50 overflow-hidden font-sans">
       <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20 relative">
@@ -39,7 +67,20 @@ export default function ChatLayout() {
 
       <div className="flex-1 flex overflow-hidden">
         <div className="w-1/2 min-w-[400px]">
-          <PdfViewer />
+          {isClient ? (
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-full text-gray-400">
+                <Loader2 className="animate-spin" size={32} />
+                <span className="ml-2">Loading Viewer...</span>
+              </div>
+            }>
+              <PdfViewer fileUrl={fileUrl} />
+            </Suspense>
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              <span className="ml-2">Initializing...</span>
+            </div>
+          )}
         </div>
 
         <div className="w-1/2 min-w-[400px]">
