@@ -16,7 +16,7 @@ async def chat_endpoint(request: ChatRequest):
     query_vector = get_embedding(user_question)
     if not query_vector:
       raise HTTPException(status_code=500, detail="Failed to generate embedding")
-    relevant_chunks = search_similar_chunks(query_vector, limit=3)
+    relevant_chunks = await search_similar_chunks(query_vector, limit=3)
     if not relevant_chunks:
       return {
         "answer": "I don't have any documents loaded yet. Please upload a PDF first.",

@@ -1,23 +1,44 @@
-import { FileText, Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { FileText, Upload, Loader2, CheckCircle, AlertCircle, Cloud } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Button } from './ui/button'
 import { useState, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { set } from 'idb-keyval'
 
+const MAX_FILE_SIZE = 6 * 1024 * 1024 // 6MB
+
 export default function StartConversation() {
+  // Local upload states
   const [isUploading, setIsUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Cloud upload states
+  const [isCloudUploading, setIsCloudUploading] = useState(false)
+  const [cloudUploadStatus, setCloudUploadStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const cloudFileInputRef = useRef<HTMLInputElement>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
   const navigate = useNavigate()
 
   const handleUploadClick = () => {
     fileInputRef.current?.click()
   }
 
+  const handleCloudUploadClick = () => {
+    cloudFileInputRef.current?.click()
+  }
+
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+
+    setErrorMessage(null)
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorMessage(`File size exceeds the limit of ${MAX_FILE_SIZE / (1024 * 1024)}MB. This file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`)
+      setUploadStatus('error')
+      return
+    }
 
     setIsUploading(true)
     setUploadStatus('idle')
@@ -39,7 +60,6 @@ export default function StartConversation() {
       }
 
       setUploadStatus('success')
-      // Optional: Navigate to chat after a brief delay
       setTimeout(() => {
         navigate({
           to: '/chat',
@@ -52,6 +72,51 @@ export default function StartConversation() {
       setUploadStatus('error')
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  const handleCloudFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setErrorMessage(null)
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorMessage(`File size exceeds the limit of ${MAX_FILE_SIZE / (1024 * 1024)}MB. This file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`)
+      setCloudUploadStatus('error')
+      return
+    }
+
+    setIsCloudUploading(true)
+    setCloudUploadStatus('idle')
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/upload/cloud', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('Cloud upload failed')
+      }
+
+      const result = await response.json() as { url: string }
+      setCloudUploadStatus('success')
+
+      setTimeout(() => {
+        navigate({
+          to: '/chat',
+          search: { file: file.name, source: 'cloud', url: result.url }
+        })
+      }, 1500)
+
+    } catch (error) {
+      console.error('Cloud upload error:', error)
+      setCloudUploadStatus('error')
+    } finally {
+      setIsCloudUploading(false)
     }
   }
 
@@ -105,6 +170,25 @@ export default function StartConversation() {
         >
           {isUploading ? 'Uploading...' : 'Upload PDF'}
         </Button>
+
+        <input
+          type="file"
+          accept=".pdf"
+          ref={cloudFileInputRef}
+          className="hidden"
+          onChange={handleCloudFileChange}
+        />
+
+        <button
+          className="inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-sky-500 text-white hover:bg-sky-600 focus:ring-sky-500 h-10 px-4 text-sm"
+          onClick={handleCloudUploadClick}
+          disabled={isCloudUploading}
+        >
+          <span className="mr-2">
+            {isCloudUploading ? <Loader2 className="animate-spin" size={18} /> : <Cloud size={18} />}
+          </span>
+          {isCloudUploading ? 'Uploading to Cloud...' : 'Upload to Cloud'}
+        </button>
       </div>
 
       {uploadStatus === 'success' && (
@@ -117,7 +201,21 @@ export default function StartConversation() {
       {uploadStatus === 'error' && (
         <div className="mt-4 text-red-600 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
           <AlertCircle size={18} />
-          <span>Upload failed. Please try again.</span>
+          <span>{errorMessage || 'Upload failed. Please try again.'}</span>
+        </div>
+      )}
+
+      {cloudUploadStatus === 'success' && (
+        <div className="mt-4 text-sky-600 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <CheckCircle size={18} />
+          <span>Uploaded to cloud! Ready for processing...</span>
+        </div>
+      )}
+
+      {cloudUploadStatus === 'error' && (
+        <div className="mt-4 text-red-600 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <AlertCircle size={18} />
+          <span>{errorMessage || 'Cloud upload failed. Please try again.'}</span>
         </div>
       )}
     </div>
