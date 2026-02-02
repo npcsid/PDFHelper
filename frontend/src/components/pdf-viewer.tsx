@@ -32,6 +32,7 @@ export default function PdfViewer({ fileUrl }: PdfViewerProps) {
     setNumPages(numPages);
     setPageNumber(1);
   }
+  console.log('fileUrl: ', fileUrl)
 
   return (
     <div className="flex flex-col h-full bg-gray-100 border-r border-gray-200">

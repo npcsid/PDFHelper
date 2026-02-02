@@ -9,29 +9,48 @@ import { get } from 'idb-keyval'
 const PdfViewer = lazy(() => import('./pdf-viewer'))
 
 export default function ChatLayout() {
-  const { file } = useSearch({ from: ChatRoute.id })
+  const { file, source, url } = useSearch({ from: ChatRoute.id })
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
     setIsClient(true)
+    let currentBlobUrl: string | null = null
+
     async function loadFile() {
-      if (file) {
-        try {
-          const blob = await get(file)
-          if (blob) {
-            const url = URL.createObjectURL(blob)
-            setFileUrl(url)
-            return () => URL.revokeObjectURL(url)
-          }
-        } catch (err) {
-          console.error("Failed to load PDF from storage:", err)
-        }
+      if (!file) {
+        setFileUrl(null)
+        return
       }
-      setFileUrl(null)
+
+      if (source === 'cloud' && url) {
+        const proxyUrl = `http://localhost:8000/api/v1/proxy-pdf?url=${encodeURIComponent(url)}`
+        setFileUrl(proxyUrl)
+        return
+      }
+
+      // 2. Try to get from IndexedDB (fastest for local uploads)
+      try {
+        const blob = await get(file)
+        if (blob) {
+          currentBlobUrl = URL.createObjectURL(blob)
+          setFileUrl(currentBlobUrl)
+          return
+        }
+      } catch (err) {
+        console.warn("Failed to load PDF from IndexedDB storage:", err)
+      }
+
+      const backendUrl = `http://localhost:8000/uploads/${encodeURIComponent(file)}`
+      setFileUrl(backendUrl)
     }
     loadFile()
-  }, [file])
+    return () => {
+      if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl)
+      }
+    }
+  }, [file, source, url])
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 overflow-hidden font-sans">

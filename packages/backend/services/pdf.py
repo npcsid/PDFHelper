@@ -1,31 +1,39 @@
-import pypdf
+from PyPDF2 import PdfReader
 from backend.utils.chunker import chunk_text
 
 def process_pdf(file_path: str) -> list[str]:
-
   """
-  Reads a pdf file, extracts it and then chunks it (w/ the help of chunker util)
-
-  Args:
-    file_path: Path to temporary PDF file
-
-  Returns:
-    List of text chunks
+  Extracts text from PDF and splits into chunks.
+  Optimized for large files with page-level logging.
   """
-
   try:
-    reader = pypdf.PdfReader(file_path)
-    full_text = ""
-  
+    print(f"Opening PDF: {file_path}")
+    reader = PdfReader(file_path)
+    num_pages = len(reader.pages)
+    print(f"Found {num_pages} pages.")
+    
+    text = ""
     for i, page in enumerate(reader.pages):
-      text = page.extract_text()
-      if text:
-        full_text += text + "\n"
+      try:
+        if (i + 1) % 50 == 0 or (i + 1) == num_pages:
+          print(f"Extracting text: {i + 1}/{num_pages} pages...")
+          
+        page_text = page.extract_text()
+        if page_text:
+          text += page_text + "\n"
+      except Exception as page_err:
+        print(f"Warning: Could not extract page {i+1}: {page_err}")
+        continue
+    
+    if not text.strip():
+      print(f"Error: No readable text found in {file_path}")
+      return []
 
-    chunks = chunk_text(full_text, chunk_size=1000, overlap=200)
+    print(f"Chunking {len(text)} characters of text...")
+    chunks = chunk_text(text, chunk_size=1000, overlap=200)
+    print(f"Success: Extracted {len(chunks)} chunks.")
     return chunks
 
   except Exception as e:
-    print(f"Error processsing pdf: {e}")
+    print(f"PyPDF2 Fatal Error: {str(e)}")
     return []
-

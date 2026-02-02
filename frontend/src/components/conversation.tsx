@@ -5,6 +5,8 @@ import { useState, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { set } from 'idb-keyval'
 
+const MAX_FILE_SIZE = 6 * 1024 * 1024 // 6MB
+
 export default function StartConversation() {
   // Local upload states
   const [isUploading, setIsUploading] = useState(false)
@@ -15,6 +17,7 @@ export default function StartConversation() {
   const [isCloudUploading, setIsCloudUploading] = useState(false)
   const [cloudUploadStatus, setCloudUploadStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const cloudFileInputRef = useRef<HTMLInputElement>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const navigate = useNavigate()
 
@@ -29,6 +32,13 @@ export default function StartConversation() {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+
+    setErrorMessage(null)
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorMessage(`File size exceeds the limit of ${MAX_FILE_SIZE / (1024 * 1024)}MB. This file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`)
+      setUploadStatus('error')
+      return
+    }
 
     setIsUploading(true)
     setUploadStatus('idle')
@@ -50,7 +60,6 @@ export default function StartConversation() {
       }
 
       setUploadStatus('success')
-      // Optional: Navigate to chat after a brief delay
       setTimeout(() => {
         navigate({
           to: '/chat',
@@ -69,6 +78,13 @@ export default function StartConversation() {
   const handleCloudFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+
+    setErrorMessage(null)
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorMessage(`File size exceeds the limit of ${MAX_FILE_SIZE / (1024 * 1024)}MB. This file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`)
+      setCloudUploadStatus('error')
+      return
+    }
 
     setIsCloudUploading(true)
     setCloudUploadStatus('idle')
@@ -185,7 +201,7 @@ export default function StartConversation() {
       {uploadStatus === 'error' && (
         <div className="mt-4 text-red-600 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
           <AlertCircle size={18} />
-          <span>Upload failed. Please try again.</span>
+          <span>{errorMessage || 'Upload failed. Please try again.'}</span>
         </div>
       )}
 
@@ -199,7 +215,7 @@ export default function StartConversation() {
       {cloudUploadStatus === 'error' && (
         <div className="mt-4 text-red-600 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
           <AlertCircle size={18} />
-          <span>Cloud upload failed. Please try again.</span>
+          <span>{errorMessage || 'Cloud upload failed. Please try again.'}</span>
         </div>
       )}
     </div>
