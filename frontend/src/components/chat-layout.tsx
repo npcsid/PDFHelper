@@ -29,7 +29,6 @@ export default function ChatLayout() {
         return
       }
 
-      // 2. Try to get from IndexedDB (fastest for local uploads)
       try {
         const blob = await get(file)
         if (blob) {
