@@ -88,17 +88,6 @@ export default function ChatPanel() {
                     }`}>
                     {msg.content}
                   </div>
-
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-2 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-100 max-w-full">
-                      <p className="font-semibold mb-1">Sources:</p>
-                      <ul className="list-disc pl-4 space-y-1">
-                        {msg.sources.map((source, i) => (
-                          <li key={i} className="italic text-gray-600 truncate max-w-xs">{source}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
