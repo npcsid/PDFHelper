@@ -55,3 +55,6 @@ graph TD
 - **Local Upload**: Quick processing with in-memory storage.
 - **Cloud Upload**: Persistent storage using Cloudflare R2 and D1.
 - **RAG (Retrieval Augmented Generation)**: Intelligent context retrieval for accurate answers based on your documents.
+
+## AI Usage Disclaimer
+2/2/2026 - As of now the code is 80% vibe coded. As the app grows bigger, this number will go down. IDE used - Antigravity
