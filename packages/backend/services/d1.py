@@ -44,6 +44,18 @@ async def init_schema():
     Creates tables if they don't exist.
     """
     schema_sql = """
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        full_name TEXT,
+        picture TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    """
+    await execute_sql(schema_sql)
+
+    schema_sql = """
     CREATE TABLE IF NOT EXISTS documents (
         id TEXT PRIMARY KEY,
         filename TEXT NOT NULL,
@@ -56,7 +68,8 @@ async def init_schema():
         chunks_count INTEGER DEFAULT 0,
         status TEXT DEFAULT 'pending',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     );
     """
     await execute_sql(schema_sql)
@@ -75,6 +88,7 @@ async def init_schema():
     """
     await execute_sql(chunks_sql)
     
+    await execute_sql("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
     await execute_sql("CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);")
     await execute_sql("CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);")
     await execute_sql("CREATE INDEX IF NOT EXISTS idx_chunks_document_id ON chunks(document_id);")
@@ -265,3 +279,52 @@ async def delete_chunks_by_document(document_id: str) -> bool:
     sql = "DELETE FROM chunks WHERE document_id = ?;"
     await execute_sql(sql, [document_id])
     return True
+
+async def get_user_by_email(email: str) -> Optional[dict]:
+    """
+    Get user by email.
+    """
+    sql = "SELECT * FROM users WHERE email = ?;"
+    result = await execute_sql(sql, [email])
+    
+    if result.get("result") and result["result"][0].get("results"):
+        rows = result["result"][0]["results"]
+        if rows:
+            return rows[0]
+    return None
+
+async def create_user(email: str, full_name: Optional[str] = None, picture: Optional[str] = None) -> dict:
+    """
+    Create a new user.
+    """
+    user_id = str(uuid.uuid4())
+    now = datetime.utcnow().isoformat()
+    
+    sql = """
+    INSERT INTO users (id, email, full_name, picture, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?);
+    """
+    params = [user_id, email, full_name, picture, now, now]
+    
+    await execute_sql(sql, params)
+    
+    return {
+        "id": user_id,
+        "email": email,
+        "full_name": full_name,
+        "picture": picture,
+        "created_at": now
+    }
+
+async def get_user_by_id(user_id: str) -> Optional[dict]:
+    """
+    Get user by ID.
+    """
+    sql = "SELECT * FROM users WHERE id = ?;"
+    result = await execute_sql(sql, [user_id])
+    
+    if result.get("result") and result["result"][0].get("results"):
+        rows = result["result"][0]["results"]
+        if rows:
+            return rows[0]
+    return None

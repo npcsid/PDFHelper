@@ -17,3 +17,8 @@ R2_PUBLIC_URL = os.getenv("R2_PUBLIC_URL")  # Optional: Custom domain or public 
 
 CF_API_TOKEN = os.getenv("CF_API_TOKEN")
 D1_DATABASE_ID = os.getenv("D1_DATABASE_ID")
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/v1/auth/callback")
+JWT_SECRET = os.getenv("JWT_SECRET", "random-jwt-secret-key")
